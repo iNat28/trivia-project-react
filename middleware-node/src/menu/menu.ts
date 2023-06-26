@@ -1,15 +1,15 @@
 import { BackendSocket } from '../backend';
 import { ClientSocket } from '../frontend';
-import { DataListener, Message, feEventListener, feEventListenerSelf } from '../types/types';
+import { DataListener, feEventListener } from '../types/types';
 
 export abstract class Menu {
     frontSocket: ClientSocket;
     backSocket: BackendSocket;
-    abstract frontListenersSelf: feEventListenerSelf[];
-    frontListeners: feEventListener[] = [];
-    backListener: DataListener;
+    abstract frontListeners: feEventListener[];
+    _frontListeners: feEventListener[] = [];
+    _backListener: DataListener;
 
-    abstract backListenerSelf(self: Menu, data: Buffer): void;
+    abstract backListener(data: Buffer): void;
 
     constructor(frontSocket: ClientSocket, backSocket: BackendSocket) {
         this.frontSocket = frontSocket;
@@ -17,35 +17,30 @@ export abstract class Menu {
     }
 
     bindListeners() {
-        this.frontListenersSelf.forEach((listener) => {
-            this.frontListeners.push({
+        this._frontListeners = this.frontListeners.map((listener) => {
+            return {
                 ev: listener.ev,
                 listener: listener.listener.bind(this),
-            });
+            };
         });
-        this.backListener = this.backListenerSelf.bind(this);
+        this._backListener = this.backListener.bind(this);
     }
 
     on() {
-        const self = this;
-
-        if (!this.backListener) {
-            console.log('binding listeners');
+        if (!this._backListener) {
             this.bindListeners();
         }
 
-        this.frontListeners.forEach((listener) => {
+        this._frontListeners.forEach((listener) => {
             this.frontSocket.addListener(listener);
         });
-        this.backSocket.addDataListener(this.backListener);
+        this.backSocket.addDataListener(this._backListener);
     }
 
     off() {
-        const self = this;
-
-        this.frontListeners.forEach((listener) => {
+        this._frontListeners.forEach((listener) => {
             this.frontSocket.removeListener(listener);
         });
-        this.backSocket.removeDataListener(this.backListener);
+        this.backSocket.removeDataListener(this._backListener);
     }
 }

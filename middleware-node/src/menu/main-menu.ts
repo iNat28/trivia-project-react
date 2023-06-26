@@ -1,27 +1,23 @@
 import { BackendSocket } from '../backend';
-import { LogOut, feEventListenerSelf } from '../types/types';
+import { LogOut, feEventListener } from '../types/types';
 import { userInfo } from '../user-info';
 import { LoginMenu } from './login-menu';
 import { Menu } from './menu';
 
 export class MainMenu extends Menu {
-    frontListenersSelf: feEventListenerSelf[] = [
+    frontListeners: feEventListener[] = [
         {
             ev: 'logout',
             listener: this.logoutFrontListener,
         },
     ];
 
-    logoutFrontListener(self: Menu) {
-        console.log('main-menu frontListener');
-
+    logoutFrontListener() {
         const logOutMsg: LogOut = { username: userInfo.username };
-        self.backSocket.write(12, logOutMsg);
+        this.backSocket.write(12, logOutMsg);
     }
 
-    backListenerSelf(self: Menu, data: Buffer) {
-        console.log('main-menu backListener');
-
+    backListener(data: Buffer) {
         const msg = BackendSocket.decodeData(data);
 
         console.log(msg);
@@ -33,12 +29,12 @@ export class MainMenu extends Menu {
                 userInfo.currMenu.off();
                 userInfo.currMenu = new LoginMenu(userInfo.currMenu.frontSocket, userInfo.currMenu.backSocket);
                 userInfo.currMenu.on();
-                self.frontSocket.emit('logout-success');
+                this.frontSocket.emit('logout-success');
                 break;
             }
             default: {
                 console.log('error', msg);
-                self.frontSocket.sendError(msg);
+                this.frontSocket.sendError(msg);
             }
         }
     }

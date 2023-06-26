@@ -32,6 +32,10 @@ function App() {
         socket.on("error", (err) => {
             console.log("error: ", err);
         });
+        socket.on("error-connecting-backend", () => {
+            console.log("error connecting to backend");
+            setIsConnectedBack(false);
+        });
         socket.on("connect-backend-success", () => {
             setIsConnectedBack(true);
         });

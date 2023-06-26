@@ -22,12 +22,12 @@ io.on('connection', (_socket) => {
     backSocket.socket.on('error', (err) => {
         console.log('error: ');
         console.log(err);
-        frontSocket.emit('error', err);
     });
 
     backSocket.socket.on('close', (hadError) => {
         if (hadError) {
             console.log('error connecting to backend');
+            frontSocket.emit('error-connecting-backend');
         } else {
             console.log('closed backend');
         }
@@ -37,6 +37,7 @@ io.on('connection', (_socket) => {
         frontSocket.remove();
         console.log('user disconnected, total sockets count:', ClientSocket.getSocketsCount());
         if (userInfo.isLoggedIn) {
+            console.log('logging user out');
             backSocket.write(12, { username: userInfo.username });
         }
         backSocket.socket.destroy();
