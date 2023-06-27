@@ -1,6 +1,5 @@
 import { BackendSocket } from '../backend';
 import { LogOut, feEventListener } from '../types/types';
-import { userInfo } from '../user-info';
 import { LoginMenu } from './login-menu';
 import { Menu } from './menu';
 
@@ -13,8 +12,10 @@ export class MainMenu extends Menu {
     ];
 
     logoutFrontListener() {
-        const logOutMsg: LogOut = { username: userInfo.username };
-        this.backSocket.write(12, logOutMsg);
+        if ('username' in this.client) {
+            const logOutMsg: LogOut = { username: this.client.username };
+            this.client.backSocket.write(12, logOutMsg);
+        }
     }
 
     backListener(data: Buffer) {
@@ -25,16 +26,16 @@ export class MainMenu extends Menu {
         switch (msg.code) {
             case 12: {
                 console.log('logged out');
-                userInfo.isLoggedIn = false;
-                userInfo.currMenu.off();
-                userInfo.currMenu = new LoginMenu(userInfo.currMenu.frontSocket, userInfo.currMenu.backSocket);
-                userInfo.currMenu.on();
-                this.frontSocket.emit('logout-success');
+                this.client.isLoggedIn = false;
+                this.client.currMenu.off();
+                this.client.currMenu = new LoginMenu(this.client);
+                this.client.currMenu.on();
+                this.client.frontSocket.emit('logout-success');
                 break;
             }
             default: {
                 console.log('error', msg);
-                this.frontSocket.sendError(msg);
+                this.client.frontSocket.sendError(msg);
             }
         }
     }

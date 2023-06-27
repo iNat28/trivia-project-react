@@ -1,4 +1,5 @@
 import { Menu } from '../menu/menu';
+import { Client } from '../client-info';
 
 export type Package = {
     code: number;
@@ -25,7 +26,7 @@ export type UserInfo = {
     currMenu?: Menu;
 };
 
-export type feListenerSelf = (self: Menu, message?: Message) => void;
+export type feListenerSelf = (self: Client, message?: Message) => void;
 export type feListener = (message?: Message) => void;
 
 export interface feEventListener {
@@ -39,6 +40,6 @@ export interface feEventListenerSelf {
 }
 
 export type DataListener = (data: Buffer) => void;
-export type DataListenerSelf = (self: Menu, data: Buffer) => void;
+export type DataListenerSelf = (self: Client, data: Buffer) => void;
 
 export type DataFunc = (data: Buffer) => void;

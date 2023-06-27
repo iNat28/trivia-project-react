@@ -27,11 +27,9 @@ export function createFrontend(): Server {
 
 export class ClientSocket {
     socket: Socket;
-    static sockets: Socket[] = [];
 
     constructor(socket: Socket) {
         this.socket = socket;
-        ClientSocket.sockets.push(socket);
     }
 
     addListener(eventListener: feEventListener) {
@@ -40,16 +38,6 @@ export class ClientSocket {
 
     removeListener(eventListener: feEventListener) {
         this.socket.off(eventListener.ev, eventListener.listener);
-    }
-
-    static getSocketsCount() {
-        return ClientSocket.sockets.length;
-    }
-
-    remove() {
-        ClientSocket.sockets = ClientSocket.sockets.filter((socket) => {
-            socket.id != this.socket.id;
-        });
     }
 
     emit(ev: string, ...args: unknown[]) {

@@ -1,6 +1,6 @@
 import { BackendSocket } from '../backend';
-import { LogIn, feEventListener } from '../types/types';
-import { userInfo } from '../user-info';
+import { Client } from '../client-info';
+import { LogIn, feEventListenerSelf, feEventListener } from '../types/types';
 import { MainMenu } from './main-menu';
 import { Menu } from './menu';
 
@@ -12,15 +12,9 @@ export class LoginMenu extends Menu {
         },
     ];
 
-    id: string;
-
     frontListener(logIn: LogIn) {
-        userInfo.username = logIn.username;
-        this.backSocket.write(10, logIn); // check arg
-    }
-
-    emit() {
-        console.log('error');
+        this.client.username = logIn.username;
+        this.client.backSocket.write(10, logIn); // check arg
     }
 
     backListener(data: Buffer) {
@@ -31,16 +25,16 @@ export class LoginMenu extends Menu {
         switch (msg.code) {
             case 10: {
                 console.log('logged in');
-                userInfo.isLoggedIn = true;
-                this.frontSocket.emit('login-success');
-                userInfo.currMenu.off();
-                userInfo.currMenu = new MainMenu(userInfo.currMenu.frontSocket, userInfo.currMenu.backSocket);
-                userInfo.currMenu.on();
+                this.client.isLoggedIn = true;
+                this.client.frontSocket.emit('login-success');
+                this.client.currMenu.off();
+                this.client.currMenu = new MainMenu(this.client);
+                this.client.currMenu.on();
                 break;
             }
             default: {
                 console.log('error', msg);
-                this.frontSocket.sendError(msg);
+                this.client.frontSocket.sendError(msg);
             }
         }
     }
