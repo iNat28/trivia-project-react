@@ -1,5 +1,5 @@
 import { BSON } from 'bson';
-import { DataListener, Package } from './types/types';
+import { DataListener, Package, Code } from './types/types';
 import { Socket, createConnection } from 'net';
 
 const host = '127.0.0.1';
@@ -18,7 +18,7 @@ export class BackendSocket {
         BackendSocket.SocketMap[id] = this;
     }
 
-    write(code: number, obj: object) {
+    write(code: Code, obj: object) {
         this.socket.write(new Uint8Array([code]));
         this.socket.write(BSON.serialize(obj));
     }

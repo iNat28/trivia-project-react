@@ -1,41 +1,13 @@
+import { BackendSocket } from '../backend';
 import { Client } from '../client-info';
-import { feEventListener } from '../types/types';
-
-/*
-export interface Menu {
-    on: (client: Client) => void;
-    off: (client: Client) => void;
-    bind: (client: Client) => void;
-    frontListeners: feEventListener[];
-    backListeners: (data: Buffer) => void;
-}
-
-function bindListeners(client: Client) {
-    return { _frontListeners, _backListener };
-}
-
-export function menuOn(
-    client: Client,
-    frontListeners: feEventListenerSelf[],
-    backListener: (client: Client, data: Buffer) => void,
-) {
-    const _frontListeners = this.frontListeners.map((listener) => {
-        return {
-            ev: listener.ev,
-            listener: (message?: Message) => listener.listener(client, message),
-        };
-    });
-    const _backListener = (data: Buffer) => this.backListener(client, data);
-}
-
-*/
+import { FrontListener, BackListener } from '../types/types';
 
 export abstract class Menu {
-    abstract frontListeners: feEventListener[];
-    abstract backListener(data: Buffer): void;
+    abstract frontListeners: FrontListener[];
+    abstract backListeners: BackListener;
     client: Client;
 
-    _frontListeners: feEventListener[];
+    _frontListeners: FrontListener[];
     _backListener: (data: Buffer) => void;
 
     constructor(client: Client) {
@@ -49,20 +21,23 @@ export abstract class Menu {
                 listener: listener.listener.bind(this),
             };
         });
-        this._backListener = this.backListener.bind(this);
+        this._backListener = this.getBackListener().bind(this);
     }
 
-    /*
-    bindListeners(client: Client) {
-        this._frontListeners = this.frontListeners.map((listener) => {
-            return {
-                ev: listener.ev,
-                listener: (message?: Message) => listener.listener(client, message),
-            };
-        });
-        this._backListener = (data: Buffer) => this.backListener(client, data);
+    getBackListener() {
+        return (data: Buffer) => {
+            const msg = BackendSocket.decodeData(data);
+
+            console.log(msg);
+
+            if (this.backListeners.has(msg.code)) {
+                this.backListeners.get(msg.code).bind(this)(msg);
+            } else {
+                console.log('error', msg);
+                this.client.frontSocket.sendError(msg);
+            }
+        };
     }
-    */
 
     on() {
         if (!this._backListener) {

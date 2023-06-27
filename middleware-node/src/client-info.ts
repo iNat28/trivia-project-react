@@ -5,12 +5,13 @@ import { Menu } from './menu/menu';
 
 export class Client {
     isLoggedIn: boolean;
-    username?: string;
-    currMenu?: Menu;
     frontSocket: ClientSocket;
     backSocket: BackendSocket;
-    static sockets: Client[] = [];
     id: string;
+
+    username?: string;
+    currMenu?: Menu;
+    static sockets: Client[] = [];
 
     constructor(socket: Socket) {
         this.frontSocket = new ClientSocket(socket);
@@ -55,5 +56,11 @@ export class Client {
         Client.sockets = Client.sockets.filter((socket) => {
             socket.id != this.id;
         });
+    }
+
+    switchMenu(newMenu: Menu) {
+        this.currMenu.off();
+        this.currMenu = newMenu;
+        this.currMenu.on();
     }
 }

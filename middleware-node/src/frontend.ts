@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { createServer } from 'http';
-import { feEventListener } from './types/types';
+import { FrontListener } from './types/types';
 
 const hostname = 'localhost';
 const port = 3001;
@@ -32,11 +32,11 @@ export class ClientSocket {
         this.socket = socket;
     }
 
-    addListener(eventListener: feEventListener) {
+    addListener(eventListener: FrontListener) {
         this.socket.on(eventListener.ev, eventListener.listener);
     }
 
-    removeListener(eventListener: feEventListener) {
+    removeListener(eventListener: FrontListener) {
         this.socket.off(eventListener.ev, eventListener.listener);
     }
 

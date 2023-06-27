@@ -1,8 +1,7 @@
 import { Menu } from '../menu/menu';
-import { Client } from '../client-info';
 
 export type Package = {
-    code: number;
+    code: Code;
     message?: string;
     [key: string]: unknown;
 };
@@ -11,12 +10,12 @@ export interface Message {
     [key: string]: unknown;
 }
 
-export interface LogIn extends Message {
+export interface LoginMessage extends Message {
     username: string;
     password: string;
 }
 
-export interface LogOut extends Message {
+export interface LogoutMessage extends Message {
     username: string;
 }
 
@@ -26,20 +25,47 @@ export type UserInfo = {
     currMenu?: Menu;
 };
 
-export type feListenerSelf = (self: Client, message?: Message) => void;
-export type feListener = (message?: Message) => void;
-
-export interface feEventListener {
+export interface FrontListener {
     ev: string;
-    listener: feListener;
+    listener: (message?: Message) => void;
 }
 
-export interface feEventListenerSelf {
-    ev: string;
-    listener: feListenerSelf;
-}
+type PackageFunc = (msg?: Package) => void;
+export type BackListener = Map<Code, PackageFunc>;
 
 export type DataListener = (data: Buffer) => void;
-export type DataListenerSelf = (self: Client, data: Buffer) => void;
 
-export type DataFunc = (data: Buffer) => void;
+export enum Code {
+    ERROR_CODE = 0,
+
+    //Login
+    LOGIN = 10,
+    SIGNUP,
+    LOGOUT,
+
+    //Menu
+    GET_ROOM = 20,
+    GET_PLAYERS_IN_ROOM,
+    JOIN_ROOM,
+    CREATE_ROOM,
+
+    //Statistics
+    USER_STATS,
+    HIGH_SCORES,
+
+    //Room
+    GET_ROOM_STATE = 30,
+
+    //RoomAdmin
+    CLOSE_ROOM,
+    START_GAME,
+
+    //RoomMember
+    LEAVE_ROOM,
+
+    //Game
+    GET_GAME_RESULTS,
+    SUBMIT_ANSWER,
+    GET_QUESTION,
+    LEAVE_GAME,
+}
