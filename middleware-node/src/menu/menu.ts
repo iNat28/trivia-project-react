@@ -1,30 +1,20 @@
 import { BackendSocket } from '../backend';
 import { Client } from '../client-info';
-import { FrontListener, BackListener } from '../types/types';
+import { FrontListener, BackListener, DataListener } from '../types/types';
 
 export abstract class Menu {
     abstract frontListeners: FrontListener[];
     abstract backListeners: BackListener;
     client: Client;
 
-    _frontListeners: FrontListener[];
-    _backListener: (data: Buffer) => void;
+    backListener: DataListener;
 
     constructor(client: Client) {
         this.client = client;
+        this.backListener = this.getBackListener();
     }
 
-    bindListeners() {
-        this._frontListeners = this.frontListeners.map((listener) => {
-            return {
-                ev: listener.ev,
-                listener: listener.listener.bind(this),
-            };
-        });
-        this._backListener = this.getBackListener().bind(this);
-    }
-
-    getBackListener() {
+    getBackListener = (): DataListener => {
         return (data: Buffer) => {
             const msg = BackendSocket.decodeData(data);
 
@@ -37,23 +27,19 @@ export abstract class Menu {
                 this.client.frontSocket.sendError(msg);
             }
         };
-    }
+    };
 
-    on() {
-        if (!this._backListener) {
-            this.bindListeners();
-        }
-
-        this._frontListeners.forEach((listener) => {
+    on = () => {
+        this.frontListeners.forEach((listener) => {
             this.client.frontSocket.addListener(listener);
         });
-        this.client.backSocket.addDataListener(this._backListener);
-    }
+        this.client.backSocket.addDataListener(this.backListener);
+    };
 
-    off() {
-        this._frontListeners.forEach((listener) => {
+    off = () => {
+        this.frontListeners.forEach((listener) => {
             this.client.frontSocket.removeListener(listener);
         });
-        this.client.backSocket.removeDataListener(this._backListener);
-    }
+        this.client.backSocket.removeDataListener(this.backListener);
+    };
 }

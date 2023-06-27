@@ -2,7 +2,7 @@ import { Socket } from 'socket.io';
 import { BackendSocket } from './backend';
 import { ClientSocket } from './frontend';
 import { Menu } from './menu/menu';
-'import { MenuManager } from './menu/menu-manager';
+import { MenuManager } from './menu/menu-manager';
 import { MenuFunc } from './types/types';
 
 export class Client {
