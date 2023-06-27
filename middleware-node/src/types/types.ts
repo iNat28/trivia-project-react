@@ -1,3 +1,4 @@
+import { Client } from '../client-info';
 import { Menu } from '../menu/menu';
 
 export type Package = {
@@ -29,6 +30,8 @@ export interface FrontListener {
     ev: string;
     listener: (message?: Message) => void;
 }
+
+export type MenuFunc = (client: Client) => Menu;
 
 type PackageFunc = (msg?: Package) => void;
 export type BackListener = Map<Code, PackageFunc>;

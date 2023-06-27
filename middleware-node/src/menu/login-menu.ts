@@ -1,5 +1,4 @@
 import { LoginMessage, FrontListener, BackListener, Code } from '../types/types';
-import { MainMenu } from './main-menu';
 import { Menu } from './menu';
 
 export class LoginMenu extends Menu {
@@ -21,6 +20,6 @@ export class LoginMenu extends Menu {
         console.log('logged in');
         this.client.isLoggedIn = true;
         this.client.frontSocket.emit('login-success');
-        this.client.switchMenu(new MainMenu(this.client));
+        this.client.switchMenu(this.client.menus.login);
     }
 }

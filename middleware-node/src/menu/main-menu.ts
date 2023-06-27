@@ -1,5 +1,4 @@
 import { BackListener, Code, LogoutMessage, FrontListener } from '../types/types';
-import { LoginMenu } from './login-menu';
 import { Menu } from './menu';
 
 export class MainMenu extends Menu {
@@ -22,7 +21,7 @@ export class MainMenu extends Menu {
     logoutBack() {
         console.log('logged out');
         this.client.isLoggedIn = false;
-        this.client.switchMenu(new LoginMenu(this.client));
+        this.client.switchMenu(this.client.menus.main);
         this.client.frontSocket.emit('logout-success');
     }
 }

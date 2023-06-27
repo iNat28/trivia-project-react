@@ -2,15 +2,19 @@ import { Socket } from 'socket.io';
 import { BackendSocket } from './backend';
 import { ClientSocket } from './frontend';
 import { Menu } from './menu/menu';
+'import { MenuManager } from './menu/menu-manager';
+import { MenuFunc } from './types/types';
 
 export class Client {
     isLoggedIn: boolean;
     frontSocket: ClientSocket;
     backSocket: BackendSocket;
     id: string;
+    menus: MenuManager;
 
     username?: string;
     currMenu?: Menu;
+
     static sockets: Client[] = [];
 
     constructor(socket: Socket) {
@@ -18,6 +22,7 @@ export class Client {
         this.backSocket = new BackendSocket(socket.id); // auto connects
         this.isLoggedIn = false;
         this.id = socket.id;
+        this.menus = new MenuManager(this);
         Client.sockets.push(this);
     }
 
@@ -58,9 +63,9 @@ export class Client {
         });
     }
 
-    switchMenu(newMenu: Menu) {
+    switchMenu(newMenu: MenuFunc) {
         this.currMenu.off();
-        this.currMenu = newMenu;
+        this.currMenu = newMenu(this);
         this.currMenu.on();
     }
 }
