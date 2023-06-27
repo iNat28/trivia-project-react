@@ -4,10 +4,7 @@
 export default function Home() {
     //const client = new Socket();
 
-    return (
-        <>
-        </>
-    );
+    return <></>;
 }
 
 /*
