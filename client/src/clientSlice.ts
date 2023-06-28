@@ -1,5 +1,5 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
-import { LoginInfo, login as _login } from './socket';
+import { LoginInfo, attemptLogin } from './socket';
 import { RootState } from './store';
 import { AppSelecterFunc } from './hooks';
 import { storeUserInfo as _storeUserInfo, lookupUserInfo } from './storage';
@@ -31,13 +31,6 @@ function getInitialState() {
         },
     };
 
-    const storedUserInfo = lookupUserInfo();
-    if (storedUserInfo) {
-        initialState.storedUserInfo = storedUserInfo;
-        _login(storedUserInfo);
-        initialState.status.loggedIn = LoginStatus.Pending;
-    }
-
     return initialState;
 }
 
@@ -55,9 +48,15 @@ const clientSlice = createSlice({
             state.status.loggedIn = action.payload;
         },
         login(state, action: PayloadAction<LoginInfo>) {
-            _login(action.payload);
-            state.status.loggedIn = LoginStatus.Pending;
-            state.loginInfo = action.payload;
+            if (!state.status.backend) {
+                console.log('unable to login, backend not connected');
+                return;
+            }
+
+            if (attemptLogin(action.payload)) {
+                state.status.loggedIn = LoginStatus.Pending;
+                state.loginInfo = action.payload;
+            }
         },
         setLoginInfo(state, action: PayloadAction<LoginInfo>) {
             state.loginInfo = action.payload;

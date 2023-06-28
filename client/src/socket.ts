@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 import store from './store';
-import { LoginStatus, saveUserInfo, setBackendStatus, setLoginStatus, setProxyStatus } from './clientSlice';
+import { LoginStatus, login, saveUserInfo, setBackendStatus, setLoginStatus, setProxyStatus } from './clientSlice';
+import { lookupUserInfo } from './storage';
 
 const URL = 'http://localhost:3001';
 
@@ -13,7 +14,15 @@ function init() {
         console.log('connected to proxy');
         store.dispatch(setProxyStatus(true));
     });
-    socket.on('connect-backend-success', () => store.dispatch(setBackendStatus(true)));
+    socket.on('connect-backend-success', () => {
+        console.log('connected to backend');
+        store.dispatch(setBackendStatus(true));
+
+        const storedUserInfo = lookupUserInfo();
+        if (storedUserInfo) {
+            store.dispatch(login(storedUserInfo));
+        }
+    });
     socket.on('error-connecting-backend', () => store.dispatch(setBackendStatus(false)));
     socket.on('disconnect', () => {
         store.dispatch(setProxyStatus(false));
@@ -30,14 +39,20 @@ function init() {
 }
 init();
 
-export function login(loginInfo: LoginInfo) {
-    console.log('logging into backend...');
-    socket.emit('login', loginInfo);
-}
-
 export interface LoginInfo {
     username: string;
     password: string;
+}
+
+export function attemptLogin(loginInfo: LoginInfo) {
+    if (!socket.connected) {
+        console.log('unable to login: proxy not connected');
+        return false;
+    }
+
+    console.log('logging into backend...');
+    socket.emit('login', loginInfo);
+    return true;
 }
 
 interface UserInfo {
