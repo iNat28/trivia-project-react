@@ -6,10 +6,11 @@ import Layout from './components/Layout';
 import { Dashboard } from './routes/dashboard';
 import { useAppSelector } from './hooks';
 import { Debug } from './components/Debug';
-import { LoginStatus, isLoggedIn } from './clientSlice';
+import { LoginStatus, errorMsg, isLoggedIn } from './clientSlice';
 
 export const App: React.FC = () => {
     const _isLoggedIn = useAppSelector(isLoggedIn);
+    const _errorMsg = useAppSelector(errorMsg);
 
     switch (_isLoggedIn) {
         case LoginStatus.LoggedOut:
@@ -33,6 +34,16 @@ export const App: React.FC = () => {
                             <Route path="/dashboard" element={<Dashboard />} />
                         </Route>
                     </Routes>
+                </Debug>
+            );
+        case LoginStatus.Error:
+            return (
+                <Debug>
+                    <>
+                        <h1>Error Logging In</h1>
+                        {_errorMsg && <p>{_errorMsg}</p>}
+                        <Login />
+                    </>
                 </Debug>
             );
         default:

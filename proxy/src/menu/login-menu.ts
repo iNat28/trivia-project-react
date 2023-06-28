@@ -1,4 +1,4 @@
-import { LoginMessage, FrontListener, BackListener, Code } from '../types/types';
+import { LoginMessage, FrontListener, BackListener, Code, Message } from '../types/types';
 import { Menu } from './menu';
 
 export class LoginMenu extends Menu {
@@ -14,11 +14,19 @@ export class LoginMenu extends Menu {
         this.client.switchMenu(this.client.menus.main);
     };
 
+    errorBack = (msg: Message) => {
+        this.client.frontSocket.emit('error-logging-in', msg);
+    };
+
     frontListeners: FrontListener[] = [
         {
             ev: 'login',
             listener: this.loginFront,
         },
     ];
-    backListeners: BackListener = new Map([[Code.LOGIN, this.loginBack]]);
+
+    backListeners: BackListener = new Map([
+        [Code.LOGIN, this.loginBack],
+        [Code.ERROR_CODE, this.errorBack],
+    ]);
 }

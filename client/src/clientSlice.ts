@@ -8,6 +8,7 @@ export enum LoginStatus {
     LoggedIn,
     LoggedOut,
     Pending,
+    Error,
 }
 
 interface ClientStatus {
@@ -20,6 +21,7 @@ interface ClientState {
     status: ClientStatus;
     loginInfo?: LoginInfo;
     storedUserInfo?: LoginInfo;
+    errorMsg?: string;
 }
 
 function getInitialState() {
@@ -66,11 +68,25 @@ const clientSlice = createSlice({
                 _storeUserInfo(state.loginInfo);
             }
         },
+        setErrorMsg(state, action: PayloadAction<string>) {
+            state.errorMsg = action.payload;
+        },
+        setStoredUserInfo(state, action: PayloadAction<LoginInfo>) {
+            state.storedUserInfo = action.payload;
+        },
     },
 });
 
-export const { setBackendStatus, setProxyStatus, setLoginStatus, login, saveUserInfo, setLoginInfo } =
-    clientSlice.actions;
+export const {
+    setBackendStatus,
+    setProxyStatus,
+    setLoginStatus,
+    login,
+    saveUserInfo,
+    setLoginInfo,
+    setErrorMsg,
+    setStoredUserInfo,
+} = clientSlice.actions;
 
 const clientReducer = clientSlice.reducer;
 export default clientReducer;
@@ -78,3 +94,4 @@ export default clientReducer;
 export const isConnectedProxy: AppSelecterFunc<boolean> = (state: RootState) => state.client.status.proxy;
 export const isConnectedBack: AppSelecterFunc<boolean> = (state: RootState) => state.client.status.backend;
 export const isLoggedIn: AppSelecterFunc<LoginStatus> = (state: RootState) => state.client.status.loggedIn;
+export const errorMsg: AppSelecterFunc<string | undefined> = (state: RootState) => state.client?.errorMsg;

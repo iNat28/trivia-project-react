@@ -41,7 +41,7 @@ export class ClientSocket {
     }
 
     emit(ev: string, ...args: unknown[]) {
-        this.socket.emit(ev, args);
+        this.socket.emit(ev, ...args);
     }
 
     sendError(error: unknown) {
