@@ -1,15 +1,24 @@
-import { useState, Dispatch, SetStateAction } from 'react';
-import { LoginInfo, client, login, loginInfo, setLoginInfo, socket } from '../socket';
+import { useState } from 'react';
+import { LoginInfo } from '../socket';
+import { login, setLoginInfo } from '../clientSlice';
+import { useAppDispatch } from '../hooks';
 
 export const Login: React.FC = () => {
     const [usernameInput, setUsernameInput] = useState('');
     const [passwordInput, setPasswordInput] = useState('');
+    const dispatch = useAppDispatch();
 
     async function handleSubmit(e: React.FormEvent) {
         console.log('logging in');
         e.preventDefault();
-        setLoginInfo({ username: usernameInput, password: passwordInput });
-        login();
+
+        const userInfo: LoginInfo = {
+            username: usernameInput,
+            password: passwordInput,
+        };
+
+        setLoginInfo(userInfo);
+        dispatch(login(userInfo));
     }
 
     return (

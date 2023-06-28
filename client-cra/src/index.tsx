@@ -3,35 +3,24 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { Debug } from './components/Debug';
+import { Provider } from 'react-redux';
+import store from './store';
+import { App } from './App';
 
-/*
-const router = createBrowserRouter(
-    createRoutesFromElements(
-        <Route path="/" element={<Root />}>
-            <Route path="dashboard" element={<Dashboard />} />
-        </Route>,
-    ),
-);
-*/
 const router = createBrowserRouter([
     {
         path: '*',
-        Component: Debug,
+        Component: App,
     },
 ]);
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
-/*
+
 root.render(
     <React.StrictMode>
-        <App />
-    </React.StrictMode>,
-);
-*/
-root.render(
-    <React.StrictMode>
-        <RouterProvider router={router} />
+        <Provider store={store}>
+            <RouterProvider router={router} />
+        </Provider>
     </React.StrictMode>,
 );
 
