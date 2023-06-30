@@ -3,18 +3,22 @@ import { Client } from '../client-info';
 import { FrontListener, BackListener, DataListener } from '../types/types';
 
 export abstract class Menu {
-    abstract frontListeners: FrontListener[];
-    abstract backListeners: BackListener;
-    client: Client;
+    abstract readonly frontListeners: FrontListener[];
+    readonly backListeners?: BackListener;
+    readonly client: Client;
 
-    backListener: DataListener;
+    readonly backListener: DataListener;
 
     constructor(client: Client) {
         this.client = client;
         this.backListener = this.getBackListener();
     }
 
-    getBackListener = (): DataListener => {
+    readonly getBackListener = (): DataListener => {
+        if (!this?.backListeners) {
+            return undefined;
+        }
+
         return (data: Buffer) => {
             const msg = BackendSocket.decodeData(data);
 
@@ -29,17 +33,21 @@ export abstract class Menu {
         };
     };
 
-    on = () => {
+    readonly on = () => {
         this.frontListeners.forEach((listener) => {
             this.client.frontSocket.addListener(listener);
         });
-        this.client.backSocket.addDataListener(this.backListener);
+        if (this.backListener) {
+            this.client.backSocket.addDataListener(this.backListener);
+        }
     };
 
-    off = () => {
+    readonly off = () => {
         this.frontListeners.forEach((listener) => {
             this.client.frontSocket.removeListener(listener);
         });
-        this.client.backSocket.removeDataListener(this.backListener);
+        if (this.backListener) {
+            this.client.backSocket.removeDataListener(this.backListener);
+        }
     };
 }

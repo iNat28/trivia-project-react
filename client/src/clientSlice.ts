@@ -1,6 +1,6 @@
-import { PayloadAction, createSlice } from '@reduxjs/toolkit';
+import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { LoginInfo, attemptLogin } from './socket';
-import { RootState } from './store';
+import { GetRootState, RootState } from './store';
 import { AppSelecterFunc } from './hooks';
 import { storeUserInfo as _storeUserInfo, lookupUserInfo } from './storage';
 
@@ -36,6 +36,36 @@ function getInitialState() {
     return initialState;
 }
 
+type Conditions = {
+    getState: GetRootState;
+    extra: unknown;
+};
+
+type LoginReturn = {
+    response: Promise<string>;
+    loginInfo: LoginInfo;
+};
+
+export const tryLogin = createAsyncThunk(
+    'client/tryLogin',
+    async (loginInfo: LoginInfo, { rejectWithValue }) => {
+        const response = await attemptLogin(loginInfo);
+        if (response === 'success') {
+            return loginInfo;
+        }
+
+        return rejectWithValue(response);
+    } /*,
+    {
+        condition: (loginInfo: LoginInfo, { getState, extra }: Conditions) => {
+            if (getState().client.status.loggedIn) {
+                return false;
+            }
+        },
+    },
+    */,
+);
+
 const clientSlice = createSlice({
     name: 'client',
     initialState: getInitialState(),
@@ -48,17 +78,6 @@ const clientSlice = createSlice({
         },
         setLoginStatus(state, action: PayloadAction<LoginStatus>) {
             state.status.loggedIn = action.payload;
-        },
-        login(state, action: PayloadAction<LoginInfo>) {
-            if (!state.status.backend) {
-                console.log('unable to login, backend not connected');
-                return;
-            }
-
-            if (attemptLogin(action.payload)) {
-                state.status.loggedIn = LoginStatus.Pending;
-                state.loginInfo = action.payload;
-            }
         },
         setLoginInfo(state, action: PayloadAction<LoginInfo>) {
             state.loginInfo = action.payload;
@@ -75,13 +94,35 @@ const clientSlice = createSlice({
             state.storedUserInfo = action.payload;
         },
     },
+    extraReducers: (builder) => {
+        builder
+            .addCase(tryLogin.pending, (state, action) => {
+                console.log('trying to log in');
+                state.status.loggedIn = LoginStatus.Pending;
+            })
+            .addCase(tryLogin.fulfilled, (state, action: PayloadAction<LoginInfo>) => {
+                console.log('log in success!');
+                if (!state?.storedUserInfo) {
+                    _storeUserInfo(action.payload);
+                    state.storedUserInfo = action.payload;
+                }
+                state.status.loggedIn = LoginStatus.LoggedIn;
+            })
+            .addCase(tryLogin.rejected, (state, action) => {
+                console.log('error logging in', action);
+                state.status.loggedIn = LoginStatus.Error;
+                if (action?.payload && typeof action.payload == 'string') {
+                    state.errorMsg = action.payload;
+                }
+            });
+    },
 });
 
 export const {
     setBackendStatus,
     setProxyStatus,
     setLoginStatus,
-    login,
+    /*login,*/
     saveUserInfo,
     setLoginInfo,
     setErrorMsg,

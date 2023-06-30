@@ -2,41 +2,51 @@ import { Client } from '../client-info';
 import { Menu } from '../menu/menu';
 
 export type Package = {
-    code: Code;
-    message?: string;
-    [key: string]: unknown;
+    readonly code: Code;
+    readonly message?: string;
+    readonly [key: string]: unknown;
 };
 
 export interface Message {
-    [key: string]: unknown;
+    readonly [key: string]: unknown;
 }
 
 export interface LoginMessage extends Message {
-    username: string;
-    password: string;
+    readonly username: string;
+    readonly password: string;
 }
 
 export interface LogoutMessage extends Message {
-    username: string;
+    readonly username: string;
 }
 
-export type UserInfo = {
-    isLoggedIn: boolean;
-    username?: string;
-    currMenu?: Menu;
-};
+export interface ErrorMessage extends Message {
+    readonly message: string;
+}
+
+export type FrontCallback = (...args: unknown[]) => unknown;
 
 export interface FrontListener {
-    ev: string;
-    listener: (message?: Message) => void;
+    readonly ev: string;
+    readonly listener: (message: Message, callback: FrontCallback) => void;
 }
 
 export type MenuFunc = (client: Client) => Menu;
 
-type PackageFunc = (msg?: Package) => void;
+export type PackageFuncArgs<T extends Message> = {
+    frontMessage?: T;
+    backMessage?: string;
+};
+type PackageFunc = (obj: PackageFuncArgs<Message>) => string;
 export type BackListener = Map<Code, PackageFunc>;
+export const BackListenerMap = Map<Code, PackageFunc>;
 
 export type DataListener = (data: Buffer) => void;
+
+export type BackendWriteOpts = {
+    code: Code;
+    obj: object;
+};
 
 export enum Code {
     ERROR_CODE = 0,

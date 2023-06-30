@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LoginInfo } from '../socket';
-import { login, setLoginInfo } from '../clientSlice';
+import { setLoginInfo, tryLogin } from '../clientSlice';
 import { useAppDispatch } from '../hooks';
 
 export const Login: React.FC = () => {
@@ -18,7 +18,8 @@ export const Login: React.FC = () => {
         };
 
         setLoginInfo(userInfo);
-        dispatch(login(userInfo));
+        const response = await dispatch(tryLogin(userInfo));
+        console.log('done', response);
     }
 
     return (

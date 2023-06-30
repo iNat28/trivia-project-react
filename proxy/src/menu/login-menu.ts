@@ -1,32 +1,24 @@
-import { LoginMessage, FrontListener, BackListener, Code, Message } from '../types/types';
+import { LoginMessage, FrontListener, Code, BackListenerMap, PackageFuncArgs } from '../types/types';
 import { Menu } from './menu';
 
 export class LoginMenu extends Menu {
-    loginFront = (loginMsg: LoginMessage) => {
-        this.client.username = loginMsg.username;
-        this.client.backSocket.write(Code.LOGIN, loginMsg); // check arg
-    };
-
-    loginBack = () => {
+    readonly loginBack = ({ frontMessage }: PackageFuncArgs<LoginMessage>) => {
         console.log('logged in');
         this.client.isLoggedIn = true;
-        this.client.frontSocket.emit('login-success');
+        this.client.username = frontMessage.username;
         this.client.switchMenu(this.client.menus.main);
+        return 'success';
     };
 
-    errorBack = (msg: Message) => {
-        this.client.frontSocket.emit('error-logging-in', msg);
-    };
+    readonly loginFront = this.client.generateFrontListener((loginMessage: LoginMessage) => {
+        console.log('logging in...');
+        return { code: Code.LOGIN, obj: loginMessage };
+    }, new BackListenerMap([[Code.LOGIN, this.loginBack]]));
 
-    frontListeners: FrontListener[] = [
+    readonly frontListeners: FrontListener[] = [
         {
             ev: 'login',
             listener: this.loginFront,
         },
     ];
-
-    backListeners: BackListener = new Map([
-        [Code.LOGIN, this.loginBack],
-        [Code.ERROR_CODE, this.errorBack],
-    ]);
 }

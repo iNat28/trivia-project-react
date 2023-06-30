@@ -7,7 +7,7 @@ const io = createFrontend();
 io.on('connection', (socket) => {
     const client = new Client(socket);
 
-    console.log('user connected, total sockets count:', Client.sockets.length);
+    console.log('user connected, total sockets count:', Client.sockets.size);
 
     client.currMenu = new LoginMenu(client);
     client.currMenu.on();

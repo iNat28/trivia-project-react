@@ -2,13 +2,13 @@ import { io } from 'socket.io-client';
 import store from './store';
 import {
     LoginStatus,
-    login,
     saveUserInfo,
     setBackendStatus,
     setErrorMsg,
     setLoginStatus,
     setProxyStatus,
     setStoredUserInfo,
+    tryLogin,
 } from './clientSlice';
 import { lookupUserInfo } from './storage';
 
@@ -23,39 +23,43 @@ function init() {
         console.log('connected to proxy');
         store.dispatch(setProxyStatus(true));
     });
-    socket.on('connect-backend-success', () => {
+    socket.on('connect-backend-success', async () => {
         console.log('connected to backend');
         store.dispatch(setBackendStatus(true));
 
         const storedUserInfo = lookupUserInfo();
         if (storedUserInfo) {
             store.dispatch(setStoredUserInfo(storedUserInfo));
-            store.dispatch(login(storedUserInfo));
+            await store.dispatch(tryLogin(storedUserInfo));
         }
     });
     socket.on('error-connecting-backend', () => {
         store.dispatch(setBackendStatus(false));
-        store.dispatch(setLoginStatus(LoginStatus.Error));
+        // store.dispatch(setLoginStatus(LoginStatus.Error));
     });
     socket.on('disconnect', () => {
         store.dispatch(setProxyStatus(false));
         store.dispatch(setBackendStatus(false));
-        store.dispatch(setLoginStatus(LoginStatus.Error));
+        // store.dispatch(setLoginStatus(LoginStatus.Error));
     });
+    /*
     socket.on('login-success', () => {
         console.log('login success!');
         store.dispatch(setLoginStatus(LoginStatus.LoggedIn));
         store.dispatch(saveUserInfo());
     });
+    */
     socket.on('error', (err) => {
         console.log('error: ', err);
     });
+    /*
     socket.on('error-logging-in', (msg) => {
         store.dispatch(setLoginStatus(LoginStatus.Error));
         if (msg?.message) {
             store.dispatch(setErrorMsg(msg.message));
         }
     });
+    */
 }
 init();
 
@@ -64,15 +68,29 @@ export interface LoginInfo {
     password: string;
 }
 
-export function attemptLogin(loginInfo: LoginInfo) {
+export async function attemptLogin(loginInfo: LoginInfo) {
     if (!socket.connected) {
-        console.log('unable to login: proxy not connected');
-        return false;
+        return 'unable to login: proxy not connected';
     }
 
-    console.log('logging into backend...');
-    socket.emit('login', loginInfo);
-    return true;
+    try {
+        const response: string = await socket.timeout(2000).emitWithAck('login', loginInfo);
+        console.log(response);
+        return response;
+    } catch (err) {
+        return 'error - timeout';
+    }
+
+    /*
+    result.x = socket.timeout(2000).emitWithAck('login', loginInfo, (err: unknown, loggedIn: boolean) => {
+        if (err) {
+            console.log(err);
+            return;
+        }
+
+        result.loggedIn = loggedIn;
+    });
+    */
 }
 
 interface UserInfo {
