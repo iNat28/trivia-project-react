@@ -8,7 +8,7 @@ export type Package = {
 };
 
 export interface Message {
-    readonly [key: string]: unknown;
+    readonly [key: string]: string;
 }
 
 export interface LoginMessage extends Message {

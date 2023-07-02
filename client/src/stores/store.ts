@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
-import clientReducer from './clientSlice';
+import authReducer from '@/features/auth/slices/authSlice';
+import debugReducer from '@/features/debug/slices/debugSlice';
 
 const store = configureStore({
     reducer: {
-        client: clientReducer,
+        auth: authReducer,
+        debug: debugReducer,
     },
 });
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { LoginInfo } from '../socket';
-import { setLoginInfo, tryLogin } from '../clientSlice';
-import { useAppDispatch } from '../hooks';
+import { useAppDispatch } from '@/hooks';
+import { login } from '../slices/authSlice';
+import { LoginMessage } from '../types';
 
 export const Login: React.FC = () => {
     const [usernameInput, setUsernameInput] = useState('');
@@ -12,13 +12,12 @@ export const Login: React.FC = () => {
         console.log('logging in');
         e.preventDefault();
 
-        const userInfo: LoginInfo = {
+        const userInfo: LoginMessage = {
             username: usernameInput,
             password: passwordInput,
         };
 
-        setLoginInfo(userInfo);
-        const response = await dispatch(tryLogin(userInfo));
+        const response = await dispatch(login(userInfo));
         console.log('done', response);
     }
 
