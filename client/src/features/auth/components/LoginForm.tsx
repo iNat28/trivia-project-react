@@ -1,29 +1,32 @@
 import { useState } from 'react';
-import { useAppDispatch } from '@/hooks';
-import { login } from '../slices/authSlice';
-import { LoginMessage } from '../types';
+import { LoginStatus, UserInfo } from '../types';
+import { useAppSelector } from '@/hooks';
+import { getErrorMsg, getLoginStatus } from '../slices';
+import { useAuth } from '../hooks';
 
-export const Login: React.FC = () => {
+export const LoginForm: React.FC = () => {
     const [usernameInput, setUsernameInput] = useState('');
     const [passwordInput, setPasswordInput] = useState('');
-    const dispatch = useAppDispatch();
+    const loginStatus = useAppSelector(getLoginStatus);
+    const errorMsg = useAppSelector(getErrorMsg);
+    const { login } = useAuth();
 
     async function handleSubmit(e: React.FormEvent) {
         console.log('logging in');
         e.preventDefault();
 
-        const userInfo: LoginMessage = {
+        const userInfo: UserInfo = {
             username: usernameInput,
             password: passwordInput,
         };
 
-        const response = await dispatch(login(userInfo));
-        console.log('done', response);
+        await login(userInfo);
     }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <h2>Please log in</h2>
+            <h3>{errorMsg}</h3>
             <form onSubmit={handleSubmit}>
                 <label>
                     <p>Username</p>
@@ -34,7 +37,9 @@ export const Login: React.FC = () => {
                     <input type="password" onChange={(e) => setPasswordInput(e.target.value)} />
                 </label>
                 <div>
-                    <button type="submit">Submit</button>
+                    <button type="submit" disabled={loginStatus === LoginStatus.Pending}>
+                        Submit
+                    </button>
                 </div>
             </form>
         </div>

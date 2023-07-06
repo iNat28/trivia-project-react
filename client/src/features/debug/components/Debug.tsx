@@ -1,17 +1,11 @@
-import { isConnectedBack, isConnectedProxy, setBackendStatus, setProxyStatus } from '../slices/debugSlice';
-import { useAppSelector, useListeners } from '../../../hooks';
-import { JSX, useEffect } from 'react';
-import { socket } from '@/lib/socket';
-import { useDispatch } from 'react-redux';
-import { SocketListener } from '@/types/types';
+import { isConnectedBack, isConnectedProxy, setBackendStatus, setProxyStatus } from '../slices';
+import { useAppDispatch, useAppSelector, useListeners } from '@/hooks';
+import { FC, JSX } from 'react';
 
-type Props = {
-    children: JSX.Element;
-};
-export const Debug: React.FC<Props> = ({ children }: Props): JSX.Element => {
+export const Debug: FC = (): JSX.Element => {
     const _isConnectedProxy = useAppSelector(isConnectedProxy);
     const _isConnectedBack = useAppSelector(isConnectedBack);
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     useListeners([
         [
@@ -19,6 +13,14 @@ export const Debug: React.FC<Props> = ({ children }: Props): JSX.Element => {
             () => {
                 console.log('connected to proxy');
                 dispatch(setProxyStatus(true));
+            },
+        ],
+        [
+            'disconnect',
+            () => {
+                console.log('disconnected from proxy and backend');
+                dispatch(setProxyStatus(false));
+                dispatch(setBackendStatus(false));
             },
         ],
         [
@@ -42,7 +44,6 @@ export const Debug: React.FC<Props> = ({ children }: Props): JSX.Element => {
             <h2>Debug</h2>
             <p>connected: {'' + _isConnectedProxy}</p>
             <p>connected to backend: {'' + _isConnectedBack}</p>
-            {children}
         </>
     );
 };

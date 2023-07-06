@@ -3,7 +3,18 @@ import { BackendSocket } from './backend';
 import { ClientSocket } from './frontend';
 import { Menu } from './menu/menu';
 import { MenuManager } from './menu/menu-manager';
-import { BackListener, BackendWriteOpts, Code, FrontCallback, MenuFunc, Message, Package } from './types/types';
+import {
+    BackListener,
+    BackendWriteOpts,
+    ClientResponse,
+    Code,
+    FrontCallback,
+    MenuFunc,
+    Message,
+    Package,
+} from './types/types';
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
+import { TimeoutError } from 'promise-socket';
 
 export class Client {
     isLoggedIn: boolean;
@@ -27,18 +38,14 @@ export class Client {
     }
 
     readonly init = async () => {
-        this.backSocket.socket.stream.on('close', (hadError) => {
-            if (hadError) {
-                console.log('error connecting to backend');
-                this.frontSocket.emit('error-connecting-backend');
-            } else {
-                console.log('closed backend');
-            }
+        this.backSocket.socket.stream.on('close', () => {
+            console.log('closed backend for client');
         });
 
         this.backSocket.socket.stream.on('error', (err) => {
             console.log('error: ');
             console.log(err);
+            this.frontSocket.emit('error-connecting-backend');
         });
 
         this.frontSocket.socket.on('disconnect', async () => {
@@ -71,27 +78,69 @@ export class Client {
         // NOTE: Front end always has to send message and callback, check for that!
         return async (frontMessage: Message, callback: FrontCallback) => {
             if (!this.backSocket.connected) {
-                callback('error - backend not connected');
-                return;
+                const response: ClientResponse = {
+                    statusCode: StatusCodes.GATEWAY_TIMEOUT,
+                    reason: 'Backend Unavailable',
+                };
+                return callback(response);
             }
 
             const result: BackendWriteOpts = fn(frontMessage);
 
-            if (result.code == Code.ERROR_CODE) {
-                callback(result.obj);
-                return;
+            if (result?.error) {
+                const response: ClientResponse = {
+                    statusCode: result?.statusCode || StatusCodes.BAD_GATEWAY,
+                    reason: result.error,
+                };
+                return callback(response);
             }
 
-            if (!(await this.backSocket.write(result))) {
-                callback('error - timout - write');
-                return;
-            } // check arg
+            const writeResponse = await this.backSocket.write(result); // check arg
 
-            const buffer: Buffer = await this.backSocket.read();
+            if (writeResponse) {
+                if (writeResponse instanceof TimeoutError) {
+                    const response: ClientResponse = {
+                        statusCode: StatusCodes.GATEWAY_TIMEOUT,
+                        reason: 'backend writing timout',
+                    };
+                    return callback(response);
+                }
 
-            if (buffer === undefined) {
-                callback('error - timeout - read');
-                return;
+                let errorMsg = writeResponse.message;
+
+                if (errorMsg.indexOf('\n') > -1) {
+                    errorMsg = errorMsg.split('\n')[0];
+                }
+
+                const response: ClientResponse = {
+                    statusCode: StatusCodes.BAD_GATEWAY,
+                    reason: `Error writing to backend: ${errorMsg}`,
+                };
+                return callback(response);
+            }
+
+            const buffer: Buffer | Error = await this.backSocket.read();
+
+            if (buffer instanceof Error) {
+                if (buffer instanceof TimeoutError) {
+                    const response: ClientResponse = {
+                        statusCode: StatusCodes.GATEWAY_TIMEOUT,
+                        reason: 'backend reading timout',
+                    };
+                    return callback(response);
+                }
+
+                let errorMsg = buffer.message;
+
+                if (errorMsg.indexOf('\n') > -1) {
+                    errorMsg = errorMsg.split('\n')[0];
+                }
+
+                const response: ClientResponse = {
+                    statusCode: StatusCodes.BAD_GATEWAY,
+                    reason: `Error reading from backend: ${errorMsg}`,
+                };
+                return callback(response);
             }
 
             const backPackage: Package = BackendSocket.decodeData(buffer);
@@ -99,15 +148,18 @@ export class Client {
             console.log(backPackage);
 
             if (backendMap.has(backPackage.code)) {
-                callback(backendMap.get(backPackage.code)({ frontMessage, backMessage: backPackage?.message }));
-            } else {
-                console.log('error', backPackage);
-                if (backPackage?.message) {
-                    callback('error - ' + backPackage.message);
-                    return;
-                }
-                callback(backPackage);
+                return callback(backendMap.get(backPackage.code)({ frontMessage, backMessage: backPackage?.message }));
             }
+
+            console.log('error', backPackage);
+            const response: ClientResponse = {
+                statusCode: StatusCodes.BAD_GATEWAY,
+                reason: ReasonPhrases.BAD_GATEWAY,
+            };
+            if (backPackage?.message) {
+                response.reason = backPackage.message;
+            }
+            return callback(response);
         };
     };
 }

@@ -1,3 +1,4 @@
+import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { Client } from '../client-info';
 import { Menu } from '../menu/menu';
 
@@ -37,16 +38,18 @@ export type PackageFuncArgs<T extends Message> = {
     frontMessage?: T;
     backMessage?: string;
 };
-type PackageFunc = (obj: PackageFuncArgs<Message>) => string;
+export type PackageFunc = (obj: PackageFuncArgs<Message>) => ClientResponse;
 export type BackListener = Map<Code, PackageFunc>;
 export const BackListenerMap = Map<Code, PackageFunc>;
 
 export type DataListener = (data: Buffer) => void;
 
-export type BackendWriteOpts = {
+export interface BackendWriteOpts {
     code: Code;
-    obj: object;
-};
+    obj?: object;
+    error?: string;
+    statusCode?: StatusCodes;
+}
 
 export enum Code {
     ERROR_CODE = 0,
@@ -82,3 +85,8 @@ export enum Code {
     GET_QUESTION,
     LEAVE_GAME,
 }
+
+export type ClientResponse = {
+    statusCode: StatusCodes;
+    reason: ReasonPhrases | string;
+};

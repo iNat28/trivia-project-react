@@ -5,9 +5,15 @@ export enum LoginStatus {
     LoggedOut,
     Pending,
     Error,
+    Init,
 }
 
 export interface LoginMessage extends Message {
+    username: string;
+    password: string;
+}
+
+export interface UserInfo {
     username: string;
     password: string;
 }

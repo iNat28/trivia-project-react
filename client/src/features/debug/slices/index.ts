@@ -24,8 +24,7 @@ const debugSlice = createSlice({
 
 export const { setBackendStatus, setProxyStatus } = debugSlice.actions;
 
-const debugReducer = debugSlice.reducer;
-export default debugReducer;
+export const debugReducer = debugSlice.reducer;
 
 export const isConnectedProxy: AppSelecterFunc<boolean> = (state: RootState) => state.debug.status.proxy;
 export const isConnectedBack: AppSelecterFunc<boolean> = (state: RootState) => state.debug.status.backend;

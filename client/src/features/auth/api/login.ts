@@ -1,16 +1,18 @@
 import { socket } from '@/lib/socket';
-import { LoginMessage } from '../types';
-import storage from '@/utils/storage';
+import { LoginMessage, UserInfo } from '../types';
+import { SocketResponse } from '@/types/types';
 
-export const login = async (loginInfo: LoginMessage) => {
-    return await socket.emit('login', loginInfo);
+export const login = async (userInfo: UserInfo): Promise<SocketResponse> => {
+    console.log('logging in...');
+
+    const loginMessage: LoginMessage = {
+        username: userInfo.username,
+        password: userInfo.password,
+    };
+
+    return await socket.emit('login', loginMessage);
 };
 
-export const storeUserInfo = (userInfo: LoginMessage) => storage.store('user_info', userInfo);
-export const lookupUserInfo = () => {
-    const userInfo = storage.lookup('user_info');
-    if (userInfo) {
-        return userInfo as LoginMessage;
-    }
-    return null;
+export const initLogin = (callback: VoidFunction) => {
+    socket.connect(callback, 'initLogin');
 };

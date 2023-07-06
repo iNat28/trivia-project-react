@@ -45,25 +45,30 @@ export class BackendSocket {
         }
     };
 
-    // TODO: check if writing was false
-    readonly write = async ({ code, obj }: BackendWriteOpts) => {
+    readonly write = async ({ code, obj }: BackendWriteOpts): Promise<Error | void> => {
         if (!this.connected) {
-            return false;
+            return Error('unable to write to backend, backend not connected');
         }
 
         try {
-            this.socket.setTimeout(timeoutMs);
             const buffer = Buffer.from(new Uint8Array([code, ...BSON.serialize(obj)]));
+            this.socket.setTimeout(timeoutMs);
             const written = await this.socket.write(buffer);
             this.socket.setTimeout(0);
             console.log(`buffer length: ${buffer.length}, written: ${written}`);
 
-            return written === buffer.length;
-        } catch (e) {
-            if (e instanceof TimeoutError) {
-                return false;
+            if (written !== buffer.length) {
+                return Error(`unable to write all of buffer of length ${buffer.length} to the backend`);
             }
-            console.log(e);
+        } catch (e) {
+            if (!(e instanceof TimeoutError)) {
+                this.connected = false;
+            }
+
+            if (e instanceof Error) {
+                return e;
+            }
+
             throw e;
         }
     };
@@ -76,21 +81,27 @@ export class BackendSocket {
         this.socket.stream.removeListener('data', dataListener);
     };
 
-    readonly read = async (): Promise<Buffer> => {
+    readonly read = async (): Promise<Buffer | Error> => {
         if (!this.connected) {
-            return undefined;
+            return Error('unable to read from backend, backend not connected');
         }
 
         try {
             this.socket.setTimeout(timeoutMs);
             const buffer = await this.socket.read();
             this.socket.setTimeout(0);
+
             return buffer as Buffer;
         } catch (e) {
-            if (e instanceof TimeoutError) {
-                console.log('timeout error');
-                return undefined;
+            if (!(e instanceof TimeoutError)) {
+                this.connected = false;
             }
+
+            if (e instanceof Error) {
+                console.log('timeout error');
+                return e;
+            }
+
             console.log(e);
             throw e;
         }
