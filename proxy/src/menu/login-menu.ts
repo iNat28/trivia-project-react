@@ -1,16 +1,18 @@
-import { ReasonPhrases, StatusCodes } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import { LoginMessage, FrontListener, Code, BackListenerMap, PackageFuncArgs, PackageFunc } from '../types/types';
 import { Menu } from './menu';
 
 export class LoginMenu extends Menu {
     readonly loginBack: PackageFunc = ({ frontMessage }: PackageFuncArgs<LoginMessage>) => {
         console.log('logged in');
-        this.client.isLoggedIn = true;
-        this.client.username = frontMessage.username;
+        const token = this.client.addUser(frontMessage);
         this.client.switchMenu(this.client.menus.main);
+
         return {
             statusCode: StatusCodes.OK,
-            reason: ReasonPhrases.OK,
+            other: {
+                token,
+            },
         };
     };
 

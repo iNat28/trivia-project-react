@@ -3,20 +3,36 @@ const storagePrefix = 'trivia_';
 const storage = {
     store: (key: string, obj: unknown) => {
         console.log('storing', obj);
-        sessionStorage.setItem(`${storagePrefix}${key}`, JSON.stringify(obj));
+
+        try {
+            sessionStorage.setItem(`${storagePrefix}${key}`, JSON.stringify(obj));
+            return true;
+        } catch (err) {
+            return false;
+        }
     },
 
-    lookup: (key: string): unknown | null => {
-        const userInfoStr = sessionStorage.getItem(`${storagePrefix}${key}`);
-        if (!userInfoStr) {
+    lookup: (key: string): unknown => {
+        try {
+            const userInfoStr = sessionStorage.getItem(`${storagePrefix}${key}`);
+            if (!userInfoStr) {
+                return null;
+            }
+
+            console.log('looked up', JSON.parse(userInfoStr));
+            return JSON.parse(userInfoStr);
+        } catch (err) {
             return null;
         }
-        console.log('looked up', JSON.parse(userInfoStr));
-        return JSON.parse(userInfoStr as string);
     },
 
     clear: (key: string) => {
-        sessionStorage.removeItem(`${storagePrefix}${key}`);
+        try {
+            sessionStorage.removeItem(`${storagePrefix}${key}`);
+            return true;
+        } catch (err) {
+            return false;
+        }
     },
 };
 

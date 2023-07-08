@@ -1,7 +1,8 @@
 import { BSON, BSONError } from 'bson';
-import { DataListener, Package, Code, BackendWriteOpts } from './types/types';
+import { DataListener, Package, Code, BackendWriteOpts, ClientResponse } from './types/types';
 import { Socket } from 'net';
 import PromiseSocket, { TimeoutError } from 'promise-socket';
+import { StatusCodes } from 'http-status-codes';
 
 const host = '127.0.0.1';
 const port = 40200;
@@ -45,12 +46,12 @@ export class BackendSocket {
         }
     };
 
-    readonly write = async ({ code, obj }: BackendWriteOpts): Promise<Error | void> => {
-        if (!this.connected) {
-            return Error('unable to write to backend, backend not connected');
-        }
-
+    readonly write = async ({ code, obj }: BackendWriteOpts): Promise<ClientResponse> => {
         try {
+            if (!this.connected) {
+                throw Error('unable to write to backend, backend not connected');
+            }
+
             const buffer = Buffer.from(new Uint8Array([code, ...BSON.serialize(obj)]));
             this.socket.setTimeout(timeoutMs);
             const written = await this.socket.write(buffer);
@@ -58,19 +59,34 @@ export class BackendSocket {
             console.log(`buffer length: ${buffer.length}, written: ${written}`);
 
             if (written !== buffer.length) {
-                return Error(`unable to write all of buffer of length ${buffer.length} to the backend`);
+                throw Error(`unable to write all of buffer of length ${buffer.length} to the backend`);
             }
         } catch (e) {
             if (!(e instanceof TimeoutError)) {
                 this.connected = false;
+                return {
+                    statusCode: StatusCodes.GATEWAY_TIMEOUT,
+                    reason: 'backend writing timout',
+                };
             }
 
             if (e instanceof Error) {
-                return e;
+                let errorMsg = e.message;
+
+                if (errorMsg.indexOf('\n') > -1) {
+                    errorMsg = errorMsg.split('\n')[0];
+                }
+
+                return {
+                    statusCode: StatusCodes.BAD_GATEWAY,
+                    reason: `Error writing to backend: ${errorMsg}`,
+                };
             }
 
             throw e;
         }
+
+        return { statusCode: StatusCodes.OK };
     };
 
     readonly addDataListener = (dataListener: DataListener) => {
@@ -81,31 +97,53 @@ export class BackendSocket {
         this.socket.stream.removeListener('data', dataListener);
     };
 
-    readonly read = async (): Promise<Buffer | Error> => {
-        if (!this.connected) {
-            return Error('unable to read from backend, backend not connected');
+    static readonly getErrorMsg = (error: Error) => {
+        let errorMsg = error.message;
+
+        if (errorMsg.indexOf('\n') > -1) {
+            errorMsg = errorMsg.split('\n')[0];
         }
 
+        return errorMsg;
+    };
+
+    readonly read = async (): Promise<ClientResponse | Buffer> => {
         try {
+            if (!this.connected) {
+                throw Error('unable to read from backend, backend not connected');
+            }
+
             this.socket.setTimeout(timeoutMs);
-            const buffer = await this.socket.read();
+            const buffer = (await this.socket.read()) as Buffer;
             this.socket.setTimeout(0);
 
-            return buffer as Buffer;
+            return buffer;
         } catch (e) {
             if (!(e instanceof TimeoutError)) {
+                console.log('timeout error');
+
                 this.connected = false;
+                return {
+                    statusCode: StatusCodes.GATEWAY_TIMEOUT,
+                    reason: 'backend reading timout',
+                };
             }
 
             if (e instanceof Error) {
-                console.log('timeout error');
-                return e;
+                return {
+                    statusCode: StatusCodes.BAD_GATEWAY,
+                    reason: `Error reading from backend: ${BackendSocket.getErrorMsg(e)}`,
+                };
             }
 
             console.log(e);
             throw e;
         }
     };
+
+    readonly close = () => {
+        this.socket.destroy();
+    }
 
     static decodeData(data: Buffer): Package {
         let msg: Package = { code: data[0] };

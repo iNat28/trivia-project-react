@@ -47,4 +47,8 @@ export class ClientSocket {
     sendError(error: unknown) {
         this.socket.emit('error', error);
     }
+
+    readonly getToken = () => {
+        return this.socket.handshake.auth?.token as string;
+    };
 }

@@ -1,6 +1,7 @@
-import { io, Socket as SocketIO } from 'socket.io-client';
-import { Message, SocketResponse } from '@/types/types';
+import { io, ManagerOptions, Socket as SocketIO, SocketOptions } from 'socket.io-client';
+import { Message, SocketListenerFunc, SocketResponse } from '@/types/types';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
+import { getToken } from '@/utils/token';
 
 const URL = 'http://localhost:3001';
 
@@ -8,11 +9,19 @@ class Socket {
     readonly socket: SocketIO;
     connectionStatus: 'connected' | 'pending' | 'disconnected' | 'error' = 'pending';
     connectionCallbacks: Map<string, VoidFunction> = new Map<string, VoidFunction>();
+    readonly token?: string;
 
     constructor() {
-        this.socket = io(URL, {
-            autoConnect: false,
-        });
+        const socketOptions: Partial<SocketOptions & ManagerOptions> = {
+            autoConnect: true,
+        };
+        const token = getToken();
+        if (token) {
+            this.token = token;
+            socketOptions.auth = { token };
+        }
+
+        this.socket = io(URL, socketOptions);
 
         this.socket.on('error', (err) => {
             console.log('socket error: ', err);
@@ -32,7 +41,7 @@ class Socket {
         });
     }
 
-    readonly connect = (callback: VoidFunction, key: string) => {
+    readonly connect = (key: string, callback: VoidFunction) => {
         const _callback = () => {
             callback();
             this.connectionCallbacks.delete(key);
@@ -42,7 +51,6 @@ class Socket {
             this.socket.off('connect', this.connectionCallbacks.get(key));
         }
 
-        this.socket.connect();
         this.socket.on('connect', _callback);
         this.connectionCallbacks.set(key, _callback);
     };
@@ -78,11 +86,11 @@ class Socket {
         }
     };
 
-    readonly addListener = (ev: string, listener: () => void) => {
+    readonly addListener = (ev: string, listener: SocketListenerFunc) => {
         this.socket.on(ev, listener);
     };
 
-    readonly removeListener = (ev: string, listener: () => void) => {
+    readonly removeListener = (ev: string, listener: SocketListenerFunc) => {
         this.socket.off(ev, listener);
     };
 }

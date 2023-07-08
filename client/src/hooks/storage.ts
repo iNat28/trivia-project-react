@@ -1,43 +1,25 @@
 import { useState } from 'react';
+import storage from '@/utils/storage';
 
-const storagePrefix = 'trivia_';
-
-export const useStorage = <T>(
-    key: string,
-    defaultValue: T | undefined = undefined,
-): [T | undefined, typeof setValue, typeof clear] => {
+export const useStorage = <T>(key: string): [T | null, typeof setValue, typeof clear] => {
     const [storedValue, setStoredValue] = useState(() => {
-        try {
-            const userInfoStr = sessionStorage.getItem(`${storagePrefix}${key}`);
-            if (userInfoStr) {
-                return JSON.parse(userInfoStr) as T;
-            } else {
-                sessionStorage.setItem(`${storagePrefix}${key}`, JSON.stringify(defaultValue));
-                return defaultValue;
-            }
-        } catch (err) {
-            return defaultValue;
+        const value = storage.lookup(key);
+        if (value) {
+            return value as T;
         }
+        return null;
     });
 
     const setValue = (newValue: T) => {
-        try {
-            sessionStorage.setItem(`${storagePrefix}${key}`, JSON.stringify(newValue));
-        } catch (err) {
-            /* empty */
+        console.log('storing:', newValue, 'key:', key);
+        if (storage.store(key, newValue)) {
+            setStoredValue(newValue);
         }
-
-        setStoredValue(newValue);
     };
 
     const clear = () => {
-        try {
-            sessionStorage.removeItem(`${storagePrefix}${key}`);
-        } catch (err) {
-            /* empty */
-        }
-
-        setStoredValue(undefined);
+        storage.clear(key);
+        setStoredValue(null);
     };
 
     return [storedValue, setValue, clear];

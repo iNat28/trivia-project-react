@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LoginStatus, UserInfo } from '../types';
+import { LoginStatus, LoginInfo } from '../types';
 import { useAppSelector } from '@/hooks';
 import { getErrorMsg, getLoginStatus } from '../slices';
 import { useAuth } from '../hooks';
@@ -15,7 +15,7 @@ export const LoginForm: React.FC = () => {
         console.log('logging in');
         e.preventDefault();
 
-        const userInfo: UserInfo = {
+        const userInfo: LoginInfo = {
             username: usernameInput,
             password: passwordInput,
         };

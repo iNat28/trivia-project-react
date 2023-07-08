@@ -2,9 +2,9 @@ import { PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { RootState } from '@/stores/store';
 import { AppSelecterFunc } from '@/hooks';
 import { login as _login, logout as _logout } from '../api';
-import { UserInfo, LoginStatus } from '../types';
+import { LoginInfo, LoginStatus } from '../types';
 import { StatusCodes } from 'http-status-codes';
-import { SocketResponse } from '@/types/types';
+import { SocketResponse, UserInfo } from '@/types/types';
 
 interface AuthState {
     loginStatus: LoginStatus;
@@ -16,15 +16,22 @@ const initialState: AuthState = {
     loginStatus: LoginStatus.Init,
 };
 
-type LoginParams = { userInfo: UserInfo; successCallback?: VoidFunction };
+type LoginParams = { userInfo: LoginInfo; successCallback: (token: string) => void };
+interface LoginResponse extends SocketResponse {
+    other: { token: string };
+}
+function isLoginResponse(socketResponse: SocketResponse): socketResponse is LoginResponse {
+    return socketResponse?.other && socketResponse.other?.token;
+}
 
 export const login = createAsyncThunk(
     'auth/login',
     async ({ userInfo, successCallback }: LoginParams, { rejectWithValue }) => {
         const response = await _login(userInfo);
+        console.log('got response', response);
         if (response.statusCode === StatusCodes.OK) {
-            if (successCallback) {
-                successCallback();
+            if (isLoginResponse(response)) {
+                successCallback(response.other.token);
             }
             return { userInfo, response };
         }
@@ -84,7 +91,7 @@ const authSlice = createSlice({
             })
             .addCase(
                 login.fulfilled,
-                (state, action: PayloadAction<{ userInfo: UserInfo; response: SocketResponse }>) => {
+                (state, action: PayloadAction<{ userInfo: LoginInfo; response: SocketResponse }>) => {
                     console.log('log in success!');
                     state.loginStatus = LoginStatus.LoggedIn;
                     state.storedUsername = action.payload.userInfo.username;

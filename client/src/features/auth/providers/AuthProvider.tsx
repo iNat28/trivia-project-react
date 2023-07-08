@@ -1,33 +1,37 @@
 import { ReactNode, createContext } from 'react';
-import { LoginStatus, UserInfo } from '../types';
+import { LoginStatus, LoginInfo } from '../types';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { login as _login, logout as _logout, getLoginStatus } from '../slices';
 import useInitAuth from '../hooks/useInitAuth';
-import { useUserInfoStorage } from '../hooks/useUserInfoStorage';
+import { useUserInfo } from '../hooks/useUserInfo';
+import { useToken } from '../hooks/useToken';
+import { UserInfo } from '@/types/types';
 
 type AuthContextType = {
     loginStatus: LoginStatus;
     userInfo: UserInfo | undefined;
-    login: (userInfo: UserInfo, _successCallback?: VoidFunction) => Promise<void>;
+    login: (userInfo: LoginInfo, _successCallback?: VoidFunction) => Promise<void>;
     logout: (_successCallback?: VoidFunction) => Promise<void>;
 };
 
 export const AuthContext = createContext({} as AuthContextType);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const { userInfo, setUserInfo, clearUserInfo } = useUserInfoStorage();
+    const { userInfo, setUserInfo } = useUserInfo();
+    const { setToken, clearToken } = useToken();
     const loginStatus = useAppSelector(getLoginStatus);
     const dispatch = useAppDispatch();
 
-    useInitAuth();
+    useInitAuth(setUserInfo, clearToken);
 
-    async function login(userInfo: UserInfo, _successCallback?: VoidFunction) {
+    async function login(loginInfo: LoginInfo, _successCallback?: VoidFunction) {
         await dispatch(
             _login({
-                userInfo: userInfo,
-                successCallback: () => {
+                userInfo: loginInfo,
+                successCallback: (token: string) => {
                     console.log('login in successsss');
-                    setUserInfo(userInfo);
+                    setUserInfo({ username: loginInfo.username });
+                    setToken(token);
                     if (_successCallback) {
                         _successCallback();
                     }
@@ -42,7 +46,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await dispatch(
             _logout({
                 successCallback: () => {
-                    clearUserInfo();
+                    clearToken();
+                    setUserInfo(undefined);
                     if (_successCallback) {
                         _successCallback();
                     }
@@ -53,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const value: AuthContextType = {
         loginStatus,
-        userInfo,
+        userInfo: loginStatus === LoginStatus.LoggedIn ? userInfo : undefined,
         login,
         logout,
     };

@@ -13,7 +13,7 @@ export interface LoginMessage extends Message {
     password: string;
 }
 
-export interface UserInfo {
+export interface LoginInfo {
     username: string;
     password: string;
 }

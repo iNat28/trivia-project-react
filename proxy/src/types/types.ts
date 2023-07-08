@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { Client } from '../client-info';
 import { Menu } from '../menu/menu';
@@ -88,5 +89,10 @@ export enum Code {
 
 export type ClientResponse = {
     statusCode: StatusCodes;
-    reason: ReasonPhrases | string;
+    reason?: ReasonPhrases | string;
+    other?: unknown;
 };
+
+export function isClientResponse(object: any): object is ClientResponse {
+    return object?.statusCode;
+}
