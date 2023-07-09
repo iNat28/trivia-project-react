@@ -7,4 +7,4 @@ import type { RootState, AppDispatch } from '../stores/store';
 type DispatchFunc = () => AppDispatch;
 export const useAppDispatch: DispatchFunc = useDispatch;
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
-export type AppSelecterFunc<ReturnType> = (state: RootState) => ReturnType;
+export type AppSelectorFunc<ReturnType> = (state: RootState) => ReturnType;

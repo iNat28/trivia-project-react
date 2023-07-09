@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LoginStatus, LoginInfo } from '../types';
+import { LoginStatus, LoginMessage } from '../types';
 import { useAppSelector } from '@/hooks';
 import { getErrorMsg, getLoginStatus } from '../slices';
 import { useAuth } from '../hooks';
@@ -15,12 +15,12 @@ export const LoginForm: React.FC = () => {
         console.log('logging in');
         e.preventDefault();
 
-        const userInfo: LoginInfo = {
+        const loginInfo: LoginMessage = {
             username: usernameInput,
             password: passwordInput,
         };
 
-        await login(userInfo);
+        await login(loginInfo);
     }
 
     return (
@@ -37,7 +37,7 @@ export const LoginForm: React.FC = () => {
                     <input type="password" onChange={(e) => setPasswordInput(e.target.value)} />
                 </label>
                 <div>
-                    <button type="submit" disabled={loginStatus === LoginStatus.Pending}>
+                    <button type="submit" disabled={loginStatus !== LoginStatus.LoggedOut}>
                         Submit
                     </button>
                 </div>

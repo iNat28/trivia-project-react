@@ -96,3 +96,7 @@ export type ClientResponse = {
 export function isClientResponse(object: any): object is ClientResponse {
     return object?.statusCode;
 }
+
+export interface UserInfo {
+    username: string;
+}

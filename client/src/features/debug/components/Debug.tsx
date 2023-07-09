@@ -24,17 +24,18 @@ export const Debug: FC = (): JSX.Element => {
             },
         ],
         [
-            'connect-backend-success',
-            () => {
+            'backend-status',
+            (backendErrorMessage: string) => {
+                console.log(backendErrorMessage);
+
+                if (backendErrorMessage) {
+                    console.log('error connecting to backend:', backendErrorMessage);
+                    dispatch(setBackendStatus(false));
+                    return;
+                }
+
                 console.log('connected to backend');
                 dispatch(setBackendStatus(true));
-            },
-        ],
-        [
-            'error-connecting-backend',
-            () => {
-                console.log('error connecting to backend');
-                dispatch(setBackendStatus(false));
             },
         ],
     ]);

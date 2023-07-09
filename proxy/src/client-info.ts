@@ -13,6 +13,7 @@ import {
     MenuFunc,
     Message,
     Package,
+    UserInfo,
     isClientResponse,
 } from './types/types';
 import { ReasonPhrases, StatusCodes } from 'http-status-codes';
@@ -39,15 +40,18 @@ export class Client {
         this.backSocket = new BackendSocket(socket.id); // doesn't auto connect
     }
 
+    readonly emitBackendStatus = (backendErrorMessage?: string, loginErrorMessage?: string, userInfo?: UserInfo) => {
+        this.frontSocket.emit('backend-status', backendErrorMessage, loginErrorMessage, userInfo);
+    };
+
     readonly init = async () => {
         this.backSocket.socket.stream.on('close', () => {
             console.log('closed backend for client');
         });
 
-        this.backSocket.socket.stream.on('error', (err) => {
-            console.log('error: ');
-            console.log(err);
-            this.frontSocket.emit('error-connecting-backend');
+        this.backSocket.socket.stream.on('error', (backendError) => {
+            console.log('error:', backendError);
+            this.emitBackendStatus(BackendSocket.getErrorMsg(backendError));
         });
 
         this.frontSocket.socket.on('disconnect', async () => {
@@ -62,28 +66,33 @@ export class Client {
         });
 
         const authToken = this.frontSocket.getToken();
+        let loginErrorMessage: string;
 
-        if (authToken && ConnectedUsers.has(authToken)) {
+        if (!authToken) {
+            loginErrorMessage = 'no token received';
+        } else if (!ConnectedUsers.has(authToken)) {
+            loginErrorMessage = 'token not in connected users';
+        } else {
             console.log('user has backend');
 
             const connectedUser = ConnectedUsers.get(authToken);
 
             if (!connectedUser.frontSocket) {
                 this.switchMenu(this.menus.main);
-                this.frontSocket.emit('connect-backend-success');
-                this.frontSocket.emit('login-success', { username: connectedUser.userInfo.username });
+                this.emitBackendStatus(undefined, undefined, connectedUser.getUserInfo());
                 connectedUser.frontEndConnect(this.frontSocket);
                 this.backSocket = connectedUser.backSocket;
                 this.connectedUser = connectedUser;
 
                 return;
             }
+
+            loginErrorMessage = 'already connected';
         }
 
-        this.backSocket.connect().then(async (value) => {
-            console.log('value: ', value);
-            this.frontSocket.emit(value);
-            this.frontSocket.emit('login-none');
+        this.backSocket.connect().then(async (backendErrorMessage) => {
+            console.log('backend error message: ', backendErrorMessage ? backendErrorMessage : 'success!');
+            this.emitBackendStatus(backendErrorMessage, loginErrorMessage);
         });
     };
 
@@ -205,63 +214,4 @@ export class Client {
         (fn: (message?: Message) => BackendWriteOpts, backendMap: BackListener) =>
         async (frontMessage: Message, callback: FrontCallback) =>
             callback(await this.writeBackend(fn, backendMap, frontMessage));
-
-    /*
-    readonly generateFrontListener = (fn: (message?: Message) => BackendWriteOpts, backendMap: BackListener) => {
-        // NOTE: Front end always has to send message and callback, check for that!
-        return async (frontMessage: Message, callback: FrontCallback) => {
-            if (!this.backSocket.connected) {
-                const response: ClientResponse = {
-                    statusCode: StatusCodes.GATEWAY_TIMEOUT,
-                    reason: 'Backend Unavailable',
-                };
-                return callback(response);
-            }
-
-            const result: BackendWriteOpts = fn(frontMessage);
-
-            if (result?.error) {
-                const response: ClientResponse = {
-                    statusCode: result?.statusCode || StatusCodes.BAD_GATEWAY,
-                    reason: result.error,
-                };
-                return callback(response);
-            }
-
-            const writeResponse = await this.backSocket.write(result); // check arg
-
-            if (writeResponse.statusCode !== StatusCodes.OK) {
-                return callback(writeResponse);
-            }
-
-            const readResponse = await this.backSocket.read();
-
-            if (isClientResponse(readResponse)) {
-                return callback(writeResponse);
-            }
-
-            const buffer: Buffer = readResponse;
-
-            const backPackage: Package = BackendSocket.decodeData(buffer);
-
-            console.log(backPackage);
-
-            if (backendMap.has(backPackage.code)) {
-                const response = backendMap.get(backPackage.code)({ frontMessage, backMessage: backPackage?.message });
-                console.log('sending ', response);
-                return callback(response);
-            }
-
-            console.log('error', backPackage);
-            const response: ClientResponse = {
-                statusCode: StatusCodes.BAD_GATEWAY,
-                reason: ReasonPhrases.BAD_GATEWAY,
-            };
-            if (backPackage?.message) {
-                response.reason = backPackage.message;
-            }
-            return callback(response);
-        };
-    };
-    */
 }

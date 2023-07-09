@@ -12,8 +12,3 @@ export interface LoginMessage extends Message {
     username: string;
     password: string;
 }
-
-export interface LoginInfo {
-    username: string;
-    password: string;
-}

@@ -1,14 +1,9 @@
 import { socket } from '@/lib/socket';
-import { LoginMessage, LoginInfo } from '../types';
+import { LoginMessage } from '../types';
 import { SocketResponse } from '@/types/types';
 
-export const login = async (userInfo: LoginInfo): Promise<SocketResponse> => {
+export const login = async (loginMessage: LoginMessage): Promise<SocketResponse> => {
     console.log('logging in...');
-
-    const loginMessage: LoginMessage = {
-        username: userInfo.username,
-        password: userInfo.password,
-    };
 
     return await socket.emit('login', loginMessage);
 };

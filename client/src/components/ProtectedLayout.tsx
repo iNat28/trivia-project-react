@@ -1,6 +1,6 @@
 import { LoginStatus, getLoginStatus } from '@/features/auth';
 import { useAppSelector } from '@/hooks';
-import { Navigate, useNavigate, useOutlet } from 'react-router-dom';
+import { Navigate, useOutlet } from 'react-router-dom';
 
 export const ProtectedLayout = () => {
     const outlet = useOutlet();

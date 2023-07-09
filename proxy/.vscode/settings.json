@@ -3,5 +3,6 @@
     "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "conventionalCommits.scopes": ["cra", "node"]
+    "conventionalCommits.scopes": ["cra", "node"],
+    "cSpell.words": ["BSON"]
 }

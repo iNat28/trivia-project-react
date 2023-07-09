@@ -4,6 +4,7 @@ import { ReasonPhrases, StatusCodes } from 'http-status-codes';
 import { getToken } from '@/utils/token';
 
 const URL = 'http://localhost:3001';
+export const SOCKET_TIMEOUT = 1000 * 2;
 
 class Socket {
     readonly socket: SocketIO;
@@ -64,7 +65,7 @@ class Socket {
         }
 
         if (this.connectionStatus === 'pending') {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, SOCKET_TIMEOUT));
         }
 
         if (this.connectionStatus !== 'connected') {
@@ -75,7 +76,7 @@ class Socket {
         }
 
         try {
-            const response: SocketResponse = await this.socket.timeout(2000).emitWithAck(ev, message);
+            const response: SocketResponse = await this.socket.timeout(SOCKET_TIMEOUT).emitWithAck(ev, message);
             console.log('socket response: ', response);
             return response;
         } catch (err) {

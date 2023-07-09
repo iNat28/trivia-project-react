@@ -1,6 +1,6 @@
 import { BackendSocket } from './backend';
 import { ClientSocket } from './frontend';
-import { LoginMessage } from './types/types';
+import { LoginMessage, UserInfo } from './types/types';
 import { TokenType, generateToken } from './utils/token';
 
 export class ConnectedUser {
@@ -47,12 +47,19 @@ export class ConnectedUser {
         ConnectedUsers.delete(this.token);
         this.disconnectFunc();
     };
+
+    getUserInfo = (): UserInfo => {
+        return {
+            username: this.userInfo.username,
+        };
+    };
 }
 
 export const ConnectedUsers = new Map<TokenType, ConnectedUser>();
 
-const TIMEOUT = 1000 * 60 * 0.3;
-const ITER_TIME = 1000 * 60 * 0.5;
+const MS_TO_MINS = 1000 * 60;
+const TIMEOUT = MS_TO_MINS * 3;
+const ITER_TIME = MS_TO_MINS * 1;
 
 async function ConnectedUsersManager() {
     // eslint-disable-next-line no-constant-condition

@@ -1,5 +1,5 @@
 import { ReactNode, createContext } from 'react';
-import { LoginStatus, LoginInfo } from '../types';
+import { LoginStatus, LoginMessage } from '../types';
 import { useAppDispatch, useAppSelector } from '@/hooks';
 import { login as _login, logout as _logout, getLoginStatus } from '../slices';
 import useInitAuth from '../hooks/useInitAuth';
@@ -10,7 +10,7 @@ import { UserInfo } from '@/types/types';
 type AuthContextType = {
     loginStatus: LoginStatus;
     userInfo: UserInfo | undefined;
-    login: (userInfo: LoginInfo, _successCallback?: VoidFunction) => Promise<void>;
+    login: (loginMessage: LoginMessage, _successCallback?: VoidFunction) => Promise<void>;
     logout: (_successCallback?: VoidFunction) => Promise<void>;
 };
 
@@ -22,15 +22,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const loginStatus = useAppSelector(getLoginStatus);
     const dispatch = useAppDispatch();
 
-    useInitAuth(setUserInfo, clearToken);
+    useInitAuth(setUserInfo);
 
-    async function login(loginInfo: LoginInfo, _successCallback?: VoidFunction) {
+    async function login(loginMessage: LoginMessage, _successCallback?: VoidFunction) {
         await dispatch(
             _login({
-                userInfo: loginInfo,
+                loginMessage,
                 successCallback: (token: string) => {
-                    console.log('login in successsss');
-                    setUserInfo({ username: loginInfo.username });
+                    console.log('login in success!');
+                    setUserInfo({ username: loginMessage.username });
                     setToken(token);
                     if (_successCallback) {
                         _successCallback();

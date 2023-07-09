@@ -1,4 +1,4 @@
-import { AppSelecterFunc } from '@/hooks';
+import { AppSelectorFunc } from '@/hooks';
 import { RootState } from '@/stores/store';
 import { PayloadAction, createSlice } from '@reduxjs/toolkit';
 
@@ -26,5 +26,5 @@ export const { setBackendStatus, setProxyStatus } = debugSlice.actions;
 
 export const debugReducer = debugSlice.reducer;
 
-export const isConnectedProxy: AppSelecterFunc<boolean> = (state: RootState) => state.debug.status.proxy;
-export const isConnectedBack: AppSelecterFunc<boolean> = (state: RootState) => state.debug.status.backend;
+export const isConnectedProxy: AppSelectorFunc<boolean> = (state: RootState) => state.debug.status.proxy;
+export const isConnectedBack: AppSelectorFunc<boolean> = (state: RootState) => state.debug.status.backend;

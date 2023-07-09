@@ -25,7 +25,8 @@ export class BackendSocket {
         BackendSocket.SocketMap[id] = this;
     }
 
-    readonly connect = async () => {
+    // returns backend error message, if no error then it's undefined
+    readonly connect = async (): Promise<string | undefined> => {
         if (this.connected) {
             return 'already-connected';
         }
@@ -35,14 +36,19 @@ export class BackendSocket {
             await this.socket.connect(port, host);
             this.socket.setTimeout(0);
             this.connected = true;
-            return 'connect-backend-success';
-        } catch (e) {
-            console.log('error connecting', e);
-            if (e?.code) {
-                console.log(e.code);
+            return undefined;
+        } catch (error) {
+            console.log('error connecting', error);
+
+            if (error instanceof TimeoutError) {
+                return 'timeout';
             }
 
-            return 'error-connecting-backend';
+            if (!(error instanceof Error)) {
+                throw error;
+            }
+
+            return BackendSocket.getErrorMsg(error);
         }
     };
 
@@ -66,7 +72,7 @@ export class BackendSocket {
                 this.connected = false;
                 return {
                     statusCode: StatusCodes.GATEWAY_TIMEOUT,
-                    reason: 'backend writing timout',
+                    reason: 'backend writing timeout',
                 };
             }
 
@@ -98,6 +104,14 @@ export class BackendSocket {
     };
 
     static readonly getErrorMsg = (error: Error) => {
+        if ('code' in error) {
+            if (error.code === 'ECONNREFUSED') {
+                return 'error connecting to backend';
+            }
+
+            return 'backend error: ' + error.code;
+        }
+
         let errorMsg = error.message;
 
         if (errorMsg.indexOf('\n') > -1) {
@@ -143,7 +157,7 @@ export class BackendSocket {
 
     readonly close = () => {
         this.socket.destroy();
-    }
+    };
 
     static decodeData(data: Buffer): Package {
         let msg: Package = { code: data[0] };
