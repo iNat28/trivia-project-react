@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom';
-import Logout from './Logout';
 import { useAuth } from '@/features/auth';
 
 export default function Home() {
@@ -16,8 +15,6 @@ export default function Home() {
             <NavLink to={'/login'} replace={true}>
                 Login
             </NavLink>
-            <hr />
-            <Logout />
             <hr />
             <NavLink to={'/shh'} replace={true}>
                 Shh
